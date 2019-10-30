@@ -1,0 +1,24 @@
+---
+title: Annotations
+categories: 译文
+tags: java
+abbrlink: ce0f97d2
+date: 2017-08-05 02:42:06
+---
+## 原文：
+You\'ve probably encountered the need to annotate elements of your Java applications by associating metadata (data that describes other data) with them. java has always provided an ad hoc annotation mechanism via the transient reserved word, which lets you annotate fields that are to be excluded during serialization. But it didn\'t offer a standard way to annotate program elements until Java 5.
+Java 5\'s general annotation mechanism consists of four components:
+1.An @interface mechanism for declaring annotation types.
+2.Meta-annotation types, which you can use to identify the application elements to which an annotation type applies; to identify the lifetime of an annotation (an instance of an annotation type); and more.
+3.Support for annotation processing via an extension to the Java Reflection API, which you can use to discover a program\'s runtime annotations, and the introduction of a generalized tool for processing annotations.
+4.Standard annotation types.
+I\'ll explain how to use these components and point out some of the challenges of annotations in the examples that follow.
+<!-- more -->
+译文：
+你可能曾遇到过这种需求：通过关联元数据（描述其他数据的数据）来注解你的java应用程序元素。一直以来，java通过transient关键字来提供一种即时注解机制，它可以让你标注一个成员变量在序列化过程中被排除。但是，直到java 5.0版本才提供一种标准的方式来注解程序。
+Java 5.0常规注解机制包括四部分：
+1． 声明注解类型@interface机制
+2． 元注解类型，你可以用来识别注解类型的程序元素应用以及注解的声明周期（注解类型的一个实例）等；
+3． 通过java反射API的扩展来支持注解处理，你可以用来发现程序运行时的注解，并引入一个泛型注解处理工具。
+4． 标准的注解类型。
+接下来，我将通过下面的例子解释如何运用这些机制，并对一些比较有挑战性的注解部分进行标明。

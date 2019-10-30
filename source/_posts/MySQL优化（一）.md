@@ -1,0 +1,130 @@
+---
+title: MySQL优化（一）
+categories: 数据库
+tags: MySQL
+abbrlink: 5a89bb41
+date: 2017-11-26 16:38:23
+---
+## MySQL数据库的优化技术
+### 对MySQL优化时一个综合性的技术，主要包括
+1、表的设计合理化（符合 3NF）
+2、添加适当索引(index)：普通索引、主键索引、唯一索引(unique)、全文索引
+3、分表技术（水平分割、垂直分割）
+4、读写分离
+5、存储过程（模块化编程，可以提供读写速度）
+6、对MySQL配置优化（配置最大并发数my.ini，调整缓存大小）
+7、升级MySQL服务器硬件
+8、定时清楚不需要的数据，定时进行碎片处理（MyISAM）
+## 什么样的表才是符合3NF
+表的范式，是首先符合1NF，才能满足2NF，进一步满足3NF
+1NF：即表的列具有原子性，不可再分解，即列的信息，不能分解，只要数据库是关系型数据库（mysql/oracle/db2/infomix/sysbase/sql server），就自动满足1NF
+<!-- more -->
+### 数据库的分类
+关系型数据库：MySQL/oracle/db2/infomix/sysbase/sql server
+非关系型数据库：（特点：面向对象或者集合）
+NoSQL数据库：MongoDB(特点是面向文档)
+2NF：表中的记录是唯一的，就满足2NF，通常我们设计一个主键来实现
+3NF：即表中不要冗余数据，就是说，表的信息，如果能够被推导出来，就不应该单独的设计一个字段来存放。
+## SQL语句本身的优化
+问题是： 如何从一个大项目中，迅速的定位执行速度慢的语句. (定位慢查询)
+①	首先我们了解mysql数据库的一些运行状态如何查询(比如想知道当前mysql运行的时间/一共执行了多少次select/update/delete.. / 当前连接)
+show status
+常用的:
+show status like ‘uptime’ ; 
+show  stauts like ‘com_select’  show stauts like ‘com_insert’ ...类推 update  delete
+☞ show [session|global] status like .... 如果你不写  [session|global] 默认是session 会话，指取出当前窗口的执行，如果你想看所有(从mysql 启动到现在，则应该 global)
+show status like ‘connections’; 
+//显示慢查询次数
+show status like ‘slow_queries’;
+
+②	如何去定位慢查询
+构建一个大表(400 万)-> 存储过程构建
+默认情况下，mysql认为10秒才是一个慢查询.
+	修改mysql的慢查询.
+show variables like ‘long_query_time’ ; //可以显示当前慢查询时间
+set long_query_time=1 ;//可以修改慢查询时间
+
+构建大表->大表中记录有要求, 记录是不同才有用，否则测试效果和真实的相差大.
+创建:
+```SQL
+CREATE TABLE dept( /*部门表*/
+deptno MEDIUMINT   UNSIGNED  NOT NULL  DEFAULT 0,  /*编号*/
+dname VARCHAR(20)  NOT NULL  DEFAULT "", /*名称*/
+loc VARCHAR(13) NOT NULL DEFAULT "" /*地点*/
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 ;
+
+CREATE TABLE emp
+(empno  MEDIUMINT UNSIGNED  NOT NULL  DEFAULT 0, /*编号*/
+ename VARCHAR(20) NOT NULL DEFAULT "", /*名字*/
+job VARCHAR(9) NOT NULL DEFAULT "",/*工作*/
+mgr MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,/*上级编号*/
+hiredate DATE NOT NULL,/*入职时间*/
+sal DECIMAL(7,2)  NOT NULL,/*薪水*/
+comm DECIMAL(7,2) NOT NULL,/*红利*/
+deptno MEDIUMINT UNSIGNED NOT NULL DEFAULT 0 /*部门编号*/
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 ;
+
+CREATE TABLE salgrade
+(
+grade MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+losal DECIMAL(17,2)  NOT NULL,
+hisal DECIMAL(17,2)  NOT NULL
+)ENGINE=MyISAM DEFAULT CHARSET=utf8;
+```
+测试数据：
+```SQL
+INSERT INTO salgrade VALUES (1,700,1200);
+INSERT INTO salgrade VALUES (2,1201,1400);
+INSERT INTO salgrade VALUES (3,1401,2000);
+INSERT INTO salgrade VALUES (4,2001,3000);
+INSERT INTO salgrade VALUES (5,3001,9999);
+```
+为了存储过程能够正常执行，我们需要把命令执行结束符修改
+```SQL
+delimiter $$
+create function rand_string(n INT) 
+returns varchar(255) #该函数会返回一个字符串
+begin 
+#chars_str定义一个变量 chars_str,类型是 varchar(100),默认值'abcdefghijklmnopqrstuvwxyzABCDEFJHIJKLMNOPQRSTUVWXYZ';
+ declare chars_str varchar(100) default
+   'abcdefghijklmnopqrstuvwxyzABCDEFJHIJKLMNOPQRSTUVWXYZ';
+ declare return_str varchar(255) default '';
+ declare i int default 0;
+ while i < n do 
+   set return_str =concat(return_str,substring(chars_str,floor(1+rand()*52),1));
+   set i = i + 1;
+   end while;
+  return return_str;
+  end $$
+```
+创建一个存储过程:
+```SQL
+create procedure insert_emp(in start int(10),in max_num int(10))
+begin
+declare i int default 0; 
+#set autocommit =0 把autocommit设置成0
+ set autocommit = 0;  
+ repeat
+ set i = i + 1;
+ insert into emp values ((start+i) ,rand_string(6),'SALESMAN',0001,curdate(),2000,400,rand_num());
+  until i = max_num
+ end repeat;
+   commit;
+ end $$
+```
+#调用刚刚写好的函数, 1800000条记录,从100001号开始
+call insert_emp(100001,4000000);
+③	这时我们如果出现一条语句执行时间超过1秒中，就会统计到. 
+④	如果把慢查询的sql记录到我们的一个日志中
+在默认情况下，我们的mysql不会记录慢查询，需要在启动mysql时候，指定记录慢查询才可以
+bin\mysqld.exe - -safe-mode  - -slow-query-log [mysql5.5 可以在my.ini指定]
+bin\mysqld.exe –log-slow-queries=d:/abc.log [低版本mysql5.0可以在my.ini指定]
+
+先关闭mysql,再启动, 如果启用了慢查询日志，默认把这个文件放在
+my.ini 文件中记录的位置
+#Path to the database root
+datadir="C:/Documents and Settings/All Users/Application Data/MySQL/MySQL Server 5.5/Data/"
+
+⑤	测试,可以看到在日志中就记录下我们的mysql慢sql语句.
+优化问题. 
+通过 explain 语句可以分析，mysql如何执行你的sql语句

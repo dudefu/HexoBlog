@@ -1,0 +1,91 @@
+---
+title: wordcount数据去重案例
+categories: 大数据
+tags: hadoop
+abbrlink: 3f20a1b4
+date: 2018-03-25 14:22:58
+---
+```Java
+package com.Practice.RemoveDupData;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+```
+<!---more--->
+```
+import java.io.IOException;
+
+/**
+ * 题目：数据去重
+ * 解题思路：将每行数据作为key值，value值为空
+ *  2012-3-1 a
+    2012-3-2 b
+    2012-3-3 c
+    2012-3-4 d
+    2012-3-5 a
+    2012-3-6 b
+    2012-3-7 c
+    2012-3-3 c
+    2012-3-1 b
+    2012-3-2 a
+    2012-3-3 b
+    2012-3-4 d
+    2012-3-5 a
+    2012-3-6 c
+    2012-3-7 d
+    2012-3-3 c
+ */
+public class RemoveDupData {
+
+    public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
+        Configuration conf = new Configuration();
+        FileSystem fs = FileSystem.get(conf);
+
+        Job job = Job.getInstance(conf);
+        job.setJar("wordcountJar/wordcount.jar");
+
+        job.setMapperClass(RemoveDupDataMapper.class);
+        job.setReducerClass(RemoveDupDataReducer.class);
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(NullWritable.class);
+
+        Path inputPath = new Path("input/RemoveDupData");
+        Path outputPath = new Path("output/RemoveDupData");
+
+
+        if(fs.isDirectory(outputPath)){
+            fs.delete(outputPath,true);
+        }
+        FileInputFormat.setInputPaths(job,inputPath);
+        FileOutputFormat.setOutputPath(job,outputPath);
+
+        boolean waitForCompletion = job.waitForCompletion(true);
+        System.exit(waitForCompletion ? 0 : 1 );
+    }
+
+    public static class RemoveDupDataMapper extends Mapper<LongWritable,Text,Text,NullWritable>{
+        @Override
+        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+            context.write(value,NullWritable.get());
+        }
+    }
+
+    public static class RemoveDupDataReducer extends Reducer<Text,NullWritable,Text,NullWritable>{
+        @Override
+        protected void reduce(Text key, Iterable<NullWritable> values, Context context) throws IOException, InterruptedException {
+            context.write(key,NullWritable.get());
+        }
+    }
+}
+
+```

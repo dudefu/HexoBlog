@@ -1,0 +1,22 @@
+---
+title: 修改kafka保留天数对数据入库的影响
+abbrlink: 37439
+date: 2019-07-26 09:56:00
+categories:
+tags:
+---
+## 场景介绍：
+Kafka集群三个broker，同时有一个生产者和一个消费者，生产者producer 已生产2个多小时约10万条数据，同时消费者将数据插入hbase中。
+ 
+## 测试：
+1、打开ambari操作界面，在kafka配置页下修改保留天数的参数log.retention.hours 为1小时，同时修改文件大小segment为10000。（此处数值的设置，为了方便测试）
+<!-- more -->
+![](https://hexoblog-1254111960.cos.ap-guangzhou.myqcloud.com/%E4%BF%AE%E6%94%B9kafka%E4%BF%9D%E7%95%99%E5%A4%A9%E6%95%B0%E5%AF%B9%E6%95%B0%E6%8D%AE%E5%85%A5%E5%BA%93%E7%9A%84%E5%BD%B1%E5%93%8D.png)
+https://hexoblog-1254111960.cos.ap-guangzhou.myqcloud.com/%E4%BF%AE%E6%94%B9kafka%E4%BF%9D%E7%95%99%E5%A4%A9%E6%95%B0%E5%AF%B9%E6%95%B0%E6%8D%AE%E5%85%A5%E5%BA%93%E7%9A%84%E5%BD%B1%E5%93%8D.png
+2、修改完参数之后，逐一重启broker，在重启的过程中，在消费者控制台可以看到如下错误：
+![](https://hexoblog-1254111960.cos.ap-guangzhou.myqcloud.com/%E4%BF%AE%E6%94%B9kafka%E4%BF%9D%E7%95%99%E5%A4%A9%E6%95%B0%E5%AF%B9%E6%95%B0%E6%8D%AE%E5%85%A5%E5%BA%93%E7%9A%84%E5%BD%B1%E5%93%8D.13.png)
+重启完之后，错误消失。
+ 
+3、测试结果：
+当把保留天数修改为1小时，则kafka中的数据只保留最近1小时的数据，早于1小时之前的数据将被删除。
+注意：如果被删除的数据没有被消费，则该被删除的数据不会被插入库中。所以，修改参数之前，确保数据已经消费过，并入库。

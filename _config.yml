@@ -1,0 +1,132 @@
+# Hexo Configuration
+## Docs: https://hexo.io/docs/configuration.html
+## Source: https://github.com/hexojs/hexo/
+
+# Site
+title: The Future                                                                                 
+subtitle: Stay hungry,stay foolish.
+description: 專注于大数据技術，分享干货
+author: Daniel
+language: zh-CN
+timezone:
+layout: filename_case
+
+# URL
+## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
+url: https://www.dudefu.club
+root: /
+permalink: :title.html
+#permalink_defaults: 
+#permalink: archives/:abbrlink.html
+#abbrlink:
+#  alg: crc32  # 算法：crc16(default) and crc32
+#  rep: hex    # 进制：dec(default) and hex
+
+# Directory
+source_dir: source
+public_dir: public
+tag_dir: tags
+archive_dir: archives
+category_dir: categories
+code_dir: downloads/code
+i18n_dir: :lang
+skip_render:
+
+# Writing
+new_post_name: :title.md # File name of new posts
+default_layout: post
+titlecase: false # Transform title into titlecase
+external_link: true # Open external links in new tab
+filename_case: 0
+render_drafts: false
+post_asset_folder: false
+relative_link: false
+future: true
+highlight:
+  enable: true
+  line_number: true
+  auto_detect: false
+  tab_replace:
+  
+# Home page setting
+# path: Root path for your blogs index page. (default = '')
+# per_page: Posts displayed per page. (0 = disable pagination)
+# order_by: Posts order. (Order by date descending by default)
+index_generator:
+  path: ''
+  per_page: 10
+  order_by: -date
+  
+# Category & Tag
+default_category: uncategorized
+category_map:
+tag_map:
+
+# Date / Time format
+## Hexo uses Moment.js to parse and display date
+## You can customize the date format as defined in
+## http://momentjs.com/docs/#/displaying/format/
+date_format: YYYY-MM-DD
+time_format: HH:mm:ss
+
+# Pagination
+## Set per_page to 0 to disable pagination
+per_page: 10
+pagination_dir: page
+
+# Extensions
+#Plugins: https://hexo.io/plugins/
+#plugins:
+#- hexo-generator-feed
+#- hexo-generator-sitemap
+## Themes: https://hexo.io/themes/
+
+theme: next
+
+# Algolia
+ #添加搜索
+#algolia:
+#  applicationID: 'PONU75UBGO'
+#  apiKey: '1a9e4f38d61224d64add6d1a759fc7bc'
+#  adminApiKey: 'c3db575b8d78ff5b54a3bf2bdbcaa6ea'
+#  indexName: 'hexo_NAME'
+#  chunkSize: 5000
+#  fields:
+#    - title
+#    - slug
+#    - path
+#    - content:strip
+  
+# Deployment
+## Docs: https://hexo.io/docs/deployment.html
+deploy:
+- type: git
+  repository: git@git.coding.net:dudefu/HexoBlog.git
+  branch: master
+- type: git
+  repository: git@github.com:dudefu/dudefu.github.io.git
+- type: git
+  repository: git@git.oschina.net:null_742_8447/blog.git
+  
+  
+search:
+  path: search.xml
+  field: post
+  format: html
+  limit: 10000
+  
+baidu_url_submit:
+  count: 100 # 提交最新的一个链接
+  host: www.dudefv.com # 在百度站长平台中注册的域名
+  token: 8OGYpxowYnhgVsUM # 请注意这是您的秘钥， 所以请不要把博客源代码发布在公众仓库里!
+  path: baidu_urls.txt # 文本文档的地址， 新链接会保存在此文本文档里
+ 
+# Enable baidu push so that the blog will push the url to baidu automatically which is very helpful for SEO
+baidu_push: true
+
+
+#hexo sitemap
+sitemap:
+  path: sitemap.xml
+baidusitemap:
+  path: baidusitemap.xml

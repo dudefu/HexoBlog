@@ -1,0 +1,256 @@
+---
+title: MyBatis上手入门实例
+categories: 框架
+tags: MyBatis
+abbrlink: b069685a
+date: 2017-08-05 02:09:23
+---
+## MyBatis下载、配置及测试 
+[点击下载](https://github.com/mybatis/mybatis-3/releases)
+[MyBatis在线中文文档](http://www.mybatis.org/mybatis-3/zh/index.html)
+下载之后打开，如图：
+![这里写图片描述](http://img.blog.csdn.net/20160413162531439)
+第一个使我们需要用到的包，pdf文档是MyBatis英文手册，后面两个分别是javadoc文档和源码。
+在这里我们还需要导入MySQL数据库驱动jar包。[官方驱动jar包下载地址](http://dev.mysql.com/downloads/connector/j/)
+这些准备以后，我们开始配置。
+ 1. 打开MyEclipse，导入jar包。在src下新建一个包，并新建配置文件conf.xml。如图：
+	![这里写图片描述](http://img.blog.csdn.net/20160413163951348) 
+<!-- more -->
+ 2. 新建测试数据库mybatis，并新建两条数据。
+
+	![这里写图片描述](http://img.blog.csdn.net/20160413165119517)
+	
+ 3. 在Mybatis中定义Mapper信息有两种方式，一种是利用xml写一个对应的包含Mapper信息的配置文件；另一种就是定义一个Mapper接口，然后定义一些相应的操作方法，再辅以相应的操作注解。conf.xml代码，具体参数的解释请看文档。
+
+```java
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<environments default="development">
+		<environment id="development">
+			<transactionManager type="JDBC" />
+			<dataSource type="POOLED">
+				<property name="driver" value="com.mysql.jdbc.Driver" />
+				<property name="url" value="jdbc:mysql://localhost:3306/mybatis" />
+				<property name="username" value="root" />
+				<property name="password" value="root" />
+			</dataSource>
+		</environment>
+	</environments>
+	<mappers>
+		<mapper resource="com/MyBatis/test1/userMapper.xml"/>
+		<mapper class="com.MyBatis.test1.UserMapper1"/>
+	</mappers>
+</configuration>
+```
+ 4.新建一个实体类User。
+
+```java 
+package com.MyBatis.test1;
+
+public class User {
+	private int id;
+	private String name;
+	private int age;
+	
+	public User() {
+		super();
+	}
+	public User(int id, String name, int age) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.age = age;
+	}
+	public int getId() {
+		return id;
+	}
+	public void setId(int id) {
+		this.id = id;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public int getAge() {
+		return age;
+	}
+	public void setAge(int age) {
+		this.age = age;
+	}
+	@Override
+	public String toString() {
+		return "User [id=" + id + ", name=" + name + ", age=" + age + "]";
+	}
+}
+
+```
+
+ 5.新建userMapper.xml文件，文件参数解释请看文档，代码如下：
+```java
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE  mapper  PUBLIC  "-//mybatis.org//DTD  Mapper  3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.MyBatis.test1.userMapper">
+	<select id="getUser" parameterType="int"
+		resultType="com.MyBatis.test1.User">
+		select * from users where id=#{id}
+	</select>
+	<select id = "insertUser" parameterType="com.MyBatis.test1.User">
+		insert into users(name,age) values(#{name},#{age});
+	</select>
+	<delete id="deleteUser" parameterType="int">
+		delete from users where id=#{id};
+	</delete>
+	
+	<update id="updateUser" parameterType="com.MyBatis.test1.User">
+		update users set name =#{name},age=#{age} where id = #{id};
+	</update>
+	
+	<select id="selectAllUsers" resultType="com.MyBatis.test1.User">
+		select * from users;
+	</select>
+</mapper>
+```
+6.新建 测试类test，此处采用JUnit4测试，然后逐个方法进行测试。
+```java
+package com.MyBatis.test1;
+
+import java.io.InputStream;
+import java.util.List;
+
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+import org.junit.Test;
+
+public class Test1 {
+	
+	String resource = "conf.xml";
+	InputStream is = Test1.class.getClassLoader().getResourceAsStream(resource);
+	SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(is);
+	SqlSession session = factory.openSession(true);
+	UserMapper1 mapper = session.getMapper(UserMapper1.class);
+	
+	@Test
+	public void insert() {
+		User user = new User();
+		user.setName("dudefu");
+		user.setAge(20);
+		String statementInsert = "com.MyBatis.test1.userMapper.insertUser";
+		session.insert(statementInsert, user);
+		
+	}
+
+	public void update() {
+		User user = new User();
+		user.setName("ddf");
+		user.setAge(20);
+		user.setId(6);
+		String statement = "com.MyBatis.test1.userMapper.updateUser";
+		session.update(statement, user);
+	}
+	
+	public void selectAllUsers() {
+		String statementSelectAll = "com.MyBatis.test1.userMapper.selectAllUsers";
+		List<User> selectAllUser = session.selectList(statementSelectAll);
+		System.out.println(selectAllUser);
+	}
+	
+	public void delete() {
+		String statement = "com.MyBatis.test1.userMapper.deleteUser";
+		int a = session.delete(statement, 10);
+		System.out.println(a);
+	}
+}
+```
+7.采用注解的方式。首先新建接口类userMapper1，此处注意，如果接口类和userMpper.xml在同一个包内，则接口类的名字不能和userMapper.xml的名字相同，否则会报错
+`java.lang.NoClassDefFoundError: com/MyBatis/test1/userMapper (wrong name: com/MyBatis/test1/UserMapper`
+具体原因，启动程序后，程序首先会加载所有文件，这时userMpper.class和userMpper.xml会发生冲突。所以如果在同一个包内需改名，此处改名为userMapper1.class。userMapper1.class代码如下：
+```java 
+package com.MyBatis.test1;
+
+import java.util.List;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
+
+public interface UserMapper1 {
+	
+	@Insert("insert into users(name,age) values(#{name},#{age})")
+	public int insertUser(User user);
+	
+	@Delete("delete from users where id=#{id}")
+	public int deleteUserById(int id);
+	
+	@Update("update users set name =#{name},age=#{age} where id = #{id}")
+	public int updateUser(User user);
+	
+	@Select("select * from users where id=#{id}")
+	public User getUserById(int id);
+	
+	@Select("select * from users")
+	public List<User>  getAllUser();
+}
+
+```
+8.新建测试类test2。代码如下：
+```java 
+package com.MyBatis.test2;
+
+import java.io.InputStream;
+import java.util.List;
+
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+import org.junit.Test;
+
+public class Test2 {
+	
+	String resource = "conf.xml";
+	InputStream is = Test1.class.getClassLoader().getResourceAsStream(resource);
+	SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(is);
+	SqlSession session = factory.openSession(true);
+	UserMapper1 mapper = session.getMapper(UserMapper1.class);
+
+	public void testInsert(){
+		int insert = mapper.insertUser(new User(-1,"dudefu",23));
+		System.out.println(insert);
+	}
+	
+	public void testUpdate(){
+		int update = mapper.updateUser(new User(11,"ddf",34));
+		System.out.println(update);
+	}
+	
+	public void testdelete(){
+		int delete = mapper.deleteUserById(11);
+		System.out.println(delete);
+	}
+	@Test
+	public void selectAllUser(){
+		List<User> selectAllUsers = mapper.getAllUser();
+		System.out.println(selectAllUsers);
+	}
+}
+
+```
+按照以上步骤进行操作，测试应该是不报错的。如果出错了，一般出错在 conf.xml中的路径配置，如下段代码；
+
+```
+<mappers>
+		<mapper resource="com/MyBatis/test1/userMapper.xml"/>
+		<mapper class="com.MyBatis.test1.UserMapper1"/>
+	</mappers>
+```
+
+和userMapper.xml中。
+
+
+
+ 
